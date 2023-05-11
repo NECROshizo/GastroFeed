@@ -1,1 +1,2 @@
-# praktikum_new_diplom
+![Workflow](https://github.com/NECROshizo/foodgram-project-react
+/actions/workflows/yamdb_workflow.yml/badge.svg)
