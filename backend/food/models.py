@@ -1,3 +1,5 @@
+# import user.models as user
+
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.core.validators import MinValueValidator, RegexValidator
@@ -85,7 +87,6 @@ class Recipes(models.Model):
     text = models.TextField('Описание рецепта')
     tags = models.ManyToManyField(
         Tag,
-        # on_delete=models.PROTECT,
         related_name='recipes',
         verbose_name='Таг',
     )
@@ -94,6 +95,12 @@ class Recipes(models.Model):
         through='IngredientsRecipes',
         related_name='recipes',
         verbose_name='Ингредиенты',
+    )
+    favorited = models.ManyToManyField(
+        User,
+        related_name='favorit_recipes',
+        verbose_name='В избраном',
+        blank=True,
     )
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время приготовления',

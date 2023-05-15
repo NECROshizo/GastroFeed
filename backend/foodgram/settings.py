@@ -30,6 +30,7 @@ DEBUG = os.getenv('DEBUG', True)
 
 ALLOWED_HOSTS = ['*']
 
+AUTH_USER_MODEL = 'user.CookUser'
 
 # Application definition
 
@@ -40,7 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'food.apps.FoodConfig'
+    'food.apps.FoodConfig',
+    'user.apps.UserConfig',
 ]
 
 MIDDLEWARE = [
