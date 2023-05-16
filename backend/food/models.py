@@ -5,26 +5,30 @@ from django.db import models
 from django.core.validators import MinValueValidator, RegexValidator
 
 
-User = get_user_model()  # TODO заменить на общее
+MAX_LENGHT_NAME_FOOD: int = 200  # TODO куда??
+MAX_LENGHT_COLOR_HEX: int = 7
+
+User = get_user_model()
 """
 TODO db_comment
 """
 
 
 class Tag(models.Model):
+    """ Модель тэгов """
     name = models.CharField(
-        max_length=200,
+        max_length=MAX_LENGHT_NAME_FOOD,
         verbose_name='Название',
         unique=True,
     )
     color = models.CharField(
-        max_length=7,
+        max_length=MAX_LENGHT_COLOR_HEX,
         verbose_name='Цвет',
         unique=True,
         validators=[RegexValidator(regex=r'#[A-F0-9]{6}$')]
     )
     slug = models.SlugField(
-        max_length=200,
+        max_length=MAX_LENGHT_NAME_FOOD,
         unique=True,
         validators=[RegexValidator(regex=r'^[-a-zA-Z0-9_]+$')]
     )
@@ -40,13 +44,14 @@ class Tag(models.Model):
             ),
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
 class Ingredients(models.Model):
+    """ Модель ингредиентов """
     name = models.CharField(
-        max_length=200,
+        max_length=MAX_LENGHT_NAME_FOOD,
         verbose_name='Наименование',
     )
     measurement_unit = models.CharField(
@@ -65,11 +70,12 @@ class Ingredients(models.Model):
             ),
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
 class Recipes(models.Model):
+    """ Модель рецептов """
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -77,7 +83,7 @@ class Recipes(models.Model):
         verbose_name='Автор',
     )
     name = models.CharField(
-        max_length=200,
+        max_length=MAX_LENGHT_NAME_FOOD,
         verbose_name='Название',
     )
     image = models.ImageField(
@@ -125,11 +131,12 @@ class Recipes(models.Model):
             ),
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
 class IngredientsRecipes(models.Model):
+    """ Связующая модель моделей Recipes и Ingredients"""
     ingredient = models.ForeignKey(
         Ingredients,
         on_delete=models.CASCADE,

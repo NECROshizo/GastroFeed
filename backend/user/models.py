@@ -39,3 +39,11 @@ class CookUser(AbstractUser):
         blank=True,
         verbose_name='Подписки',
     )
+
+    class Meta:
+        ordering = ('username', )
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+
+    def __str__(self):
+        return f'{self.get_full_name} aka {self.username}'
