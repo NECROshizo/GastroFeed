@@ -14,7 +14,7 @@ TODO db_comment
 """
 
 
-class Tag(models.Model):
+class Tag(models.Model):  # TODO Tags..
     """ Модель тэгов """
     name = models.CharField(
         max_length=MAX_LENGHT_NAME_FOOD,
