@@ -8,14 +8,16 @@ from food.models import (
     Ingredients,
     Recipes,
     IngredientsRecipes,
+
 )
-from .permission import IsAdminOrRead
+from .permission import RecipiesPermisionUserAutherAdmin
 from .paginations import FoodgrammPagination
 from .serializers import (
     UserSerializer,
     TagSerializer,
     IngredientsSerializer,
     RecipesSerializer,
+    # RecipesCreateSerializer
 )
 
 User = get_user_model()
@@ -24,8 +26,8 @@ User = get_user_model()
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    pagination_class = FoodgrammPagination
-    permission_classes = (permissions.IsAuthenticated,)
+    # pagination_class = FoodgrammPagination
+    # permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
 
 class TagViewSet(viewsets.ModelViewSet):
@@ -47,5 +49,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipes.objects.all()
     serializer_class = RecipesSerializer
     pagination_class = FoodgrammPagination
+    permission_classes = (RecipiesPermisionUserAutherAdmin,)
     # filter_backends = (DjangoFilterBackend,)
     # filterset_fields = ('tags',)

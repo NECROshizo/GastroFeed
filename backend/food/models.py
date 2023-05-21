@@ -20,6 +20,8 @@ class Tag(models.Model):  # TODO Tags..
         max_length=MAX_LENGHT_NAME_FOOD,
         verbose_name='Название',
         unique=True,
+        db_comment='Видимое название тега',
+        help_text='Видимое название тега'
     )
     color = models.CharField(
         max_length=MAX_LENGHT_COLOR_HEX,
@@ -94,7 +96,7 @@ class Recipes(models.Model):
     tags = models.ManyToManyField(
         Tag,
         related_name='recipes',
-        verbose_name='Таг',
+        verbose_name='Тег',
     )
     ingredients = models.ManyToManyField(
         Ingredients,
@@ -104,8 +106,16 @@ class Recipes(models.Model):
     )
     favorited = models.ManyToManyField(
         User,
-        related_name='favorit_recipes',
+        through='Favorit',
+        related_name='recipes_favorit',
         verbose_name='В избраном',
+        blank=True,
+    )
+    shopping_cart = models.ManyToManyField(
+        User,
+        through='ShoppingCart',
+        related_name='recipes_shopping_cart',
+        verbose_name='В корзине',
         blank=True,
     )
     cooking_time = models.PositiveIntegerField(
@@ -126,7 +136,7 @@ class Recipes(models.Model):
         ordering = ['-pub_date']
         constraints = (
             models.UniqueConstraint(
-                fields=('author', 'name', 'pub_date'),
+                fields=('author', 'name'),
                 name='unique_recipes'
             ),
         )
@@ -159,6 +169,56 @@ class IngredientsRecipes(models.Model):
         constraints = (
             models.UniqueConstraint(
                 fields=('ingredient', 'recipes'),
-                name='unique_ingredient_to_recipes',
+                name='Один вид ингредиента в рецепте',
+            ),
+        )
+
+
+class Favorit(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='favorit_user_recipe',
+        verbose_name='Ингредиент',
+    )
+    recipes = models.ForeignKey(
+        Recipes,
+        on_delete=models.CASCADE,
+        related_name='favorit_recipe',
+        verbose_name='Рецепт',
+    )
+
+    class Meta:
+        verbose_name = 'Добавил в избранное'
+        verbose_name_plural = 'Добавили в избранное'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('user', 'recipes'),
+                name='unique_favorit',
+            ),
+        )
+
+
+class ShoppingCart(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='shoping_card_user_recipe',
+        verbose_name='Ингредиент',
+    )
+    recipes = models.ForeignKey(
+        Recipes,
+        on_delete=models.CASCADE,
+        related_name='shoping_card_recipe',
+        verbose_name='Рецепт',
+    )
+
+    class Meta:
+        verbose_name = 'Добавил в корзину'
+        verbose_name_plural = 'Добавили в корзину'
+        constraints = (
+            models.UniqueConstraint(
+                fields=('user', 'recipes'),
+                name='unique_shoping_card',
             ),
         )
