@@ -5,16 +5,17 @@ from django.urls import include, path, re_path
 from rest_framework import routers
 from .views import (
     UserViewSet,
-    TagViewSet,
+    TagsViewSet,
     IngredientsViewSet,
     RecipesViewSet,
 )
 
 
 app_name = 'api'
+
 router = routers.DefaultRouter()
 # router.register('users', UserViewSet)
-router.register('tags', TagViewSet, basename='tags')
+router.register('tags', TagsViewSet, basename='tags')
 router.register('ingredients', IngredientsViewSet, basename='ingredients')
 router.register('recipes', RecipesViewSet, basename='recipes')
 

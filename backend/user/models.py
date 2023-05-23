@@ -1,7 +1,5 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-# from food.models import Recipes
-# import food.models as food
 
 
 class CookUser(AbstractUser):

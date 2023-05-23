@@ -1,9 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html, format_html_join
 from .models import (
-    Ingredients,
+    Ingredient,
     IngredientsRecipes,
-    Recipes,
+    Recipe,
     Tag
 )
 
@@ -17,7 +17,7 @@ class IngredientsInline(admin.TabularInline):
     min_num = 1
 
 
-@admin.register(Ingredients)
+@admin.register(Ingredient)
 class IngredientsAdmin(admin.ModelAdmin):
     """ Отображение в Админпанели Ингридиентов"""
     list_display = ('name', 'measurement_unit')
@@ -43,7 +43,7 @@ class TagsAdmin(admin.ModelAdmin):
         return color_column
 
 
-@admin.register(Recipes)
+@admin.register(Recipe)
 class RecipesAdmin(admin.ModelAdmin):
     """ Отображение в Админпанели Рецептов"""
     list_display = (
@@ -57,7 +57,7 @@ class RecipesAdmin(admin.ModelAdmin):
     empty_value_display = EMPTY_VALUE_DISPLAY
 
     @admin.display(description='Превью блюда')
-    def show_preview(self, obj: Recipes) -> str:
+    def show_preview(self, obj: Recipe) -> str:
         images_column: str = format_html(
             '<img src="{}" style="max-height: 100px;">',
             obj.image.url
@@ -65,7 +65,7 @@ class RecipesAdmin(admin.ModelAdmin):
         return images_column
 
     @admin.display(description='Тэги')
-    def show_tags(self, obj: Recipes) -> str:
+    def show_tags(self, obj: Recipe) -> str:
         tags_column: str = format_html_join(
             ', ', '<span style="color:{}">{}</span>',
             ((tag.color, tag.name) for tag in obj.tags.all())
@@ -74,7 +74,7 @@ class RecipesAdmin(admin.ModelAdmin):
 
     @admin.display(description='Ингредиенты',)
     # TODO слишком много обращений к БД
-    def show_ingredients(self, obj: Recipes) -> str:
+    def show_ingredients(self, obj: Recipe) -> str:
         ingredients_query_set: list[IngredientsRecipes] = sorted(
             obj.ingredient_in_recipe.all(),
             key=lambda x: -x.amount
