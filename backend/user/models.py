@@ -12,23 +12,8 @@ class CookUser(AbstractUser):
         max_length=254,
         unique=True,
     )
-
-    # username = models.CharField(
-    #     'Псевдоним пользователя',
-    #     max_length=150,
-    #     unique=True,
-    #     help_text=(
-    #         'Обязателен к заполнению.'
-    #         'Используйти только буквы, цифры и @/./+/-/_. '
-    #     ),
-    #     validators=[super().username_validator],
-    #     error_messages={
-    #         "unique": "Пользователь с таким именем уже существует.",
-    #     },
-    # )
     first_name = models.CharField('Имя', max_length=150,)
     last_name = models.CharField('Фамилия', max_length=150,)
-
     subscriptions = models.ManyToManyField(
         'CookUser',
         through='Subscriptions',
@@ -46,8 +31,8 @@ class CookUser(AbstractUser):
     #     return f'{self.get_full_name} aka {self.username}'
 
 
-class Subscriptions(models.Model):
-    auther = models.ForeignKey(
+class Subscriptions(models.Model):  # TODO Разобраться с именами........
+    user = models.ForeignKey(
         CookUser,
         on_delete=models.CASCADE,
         related_name='subscription',
@@ -65,10 +50,10 @@ class Subscriptions(models.Model):
         verbose_name_plural = 'Подписка'
         constraints = (
             models.UniqueConstraint(
-                fields=('auther', 'subscriber'),
+                fields=('user', 'subscriber'),
                 name='unique_subscriptions',
             ),
             models.CheckConstraint(
-                check=~models.Q(auther=models.F('subscriber')),
+                check=~models.Q(user=models.F('subscriber')),
                 name='На себя нельзя',)
         )

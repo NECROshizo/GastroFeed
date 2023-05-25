@@ -1,6 +1,4 @@
 from rest_framework import serializers
-# from djoser import serializers as djoser_serializers
-# .serializers import UserCreateSerializer, UserSerializer
 from django.db.models import F
 from drf_extra_fields.fields import Base64ImageField
 from django.contrib.auth import get_user_model
@@ -13,6 +11,18 @@ from food.models import (
 import json
 
 User = get_user_model()
+
+
+from django.db.models.fields.related_descriptors import create_reverse_many_to_one_manager
+from rest_framework import serializers
+def _check_object(
+    instans_class: serializers,
+    obj: create_reverse_many_to_one_manager
+) -> bool:
+    user = instans_class.context.get('request').user
+    if user.is_anonymous:
+        return False
+    return obj.filter(user=user).exists()
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -33,10 +43,7 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {'password': {'write_only': True}}
 
     def get_is_subscription(self, obj: User):
-        request = self.context.get('request')
-        if request.user.is_anonymous:
-            return False
-        return obj.subscription.filter(subscriber=request.user).exists()
+        return _check_object(self, obj.subscriber)
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -89,47 +96,10 @@ class RecipeSerializer(serializers.ModelSerializer):
         return ingredients
 
     def get_is_favorited(self, obj: Recipe):
-        user = self.context.get('request').user
-        if user.is_anonymous:
-            return False
-        return obj.favorit_recipe.filter(user=user).exists()
+        return _check_object(self, obj.favorit_recipe)
 
     def get_is_in_shopping_cart(self, obj: Recipe):
-        user = self.context.get('request').user
-        if user.is_anonymous:
-            return False
-        return obj.shoping_card_recipe.filter(user=user).exists()
-
-    # def validate_tags(self, value):
-    #     # if not value:
-    #     #     raise serializers.ValidationError('Теги необходиый атрибут')
-    #     tags_exists = Tag.objects.filter(id__in=value).values('id')
-    #     tags_missing = [tag for tag in value if tag not in tags_exists]
-    #     if tags_missing:
-    #         raise serializers.ValidationError(
-    #             f'Теги {", ".join(tags_missing)} не существуют')
-    #     return value
-
-    # def validate_ingredients(self, value: list[dict]):
-    #     # if not value:
-    #     #     raise serializers.ValidationError(
-    #     #         'Ингредиенти необходиый атрибут')
-    #     ingredient_missing, amount_incorrect = list(), list()
-    #     for ingredient in value:
-    #         id, amount = ingredient.values()
-    #         if not Ingredients.objects.filter(id=id).exists():
-    #             ingredient.append(id)
-    #         elif amount < 1:
-    #             amount_incorrect.append(id)
-    #     if ingredient_missing:
-    #         raise serializers.ValidationError(
-    #             f'Ингредиентs {", ".join(ingredient_missing)} не существуют')
-    #     if amount_incorrect:
-    #         raise serializers.ValidationError(
-    #             f'У ингредиентов {", ".join(amount_incorrect)}'
-    #             f'некоректныое количество'
-    #         )
-    #     return value
+        return _check_object(self, obj.shoping_card_recipe)
 
     def validate(self, data):
         tags = self.initial_data.get('tags')
@@ -227,3 +197,33 @@ class RecipeBriefSerializer(serializers.ModelSerializer):
             'image',
             'cooking_time',
         )
+
+
+class UserSubscriptionsSerializer(serializers.ModelSerializer):
+    recipes = RecipeBriefSerializer(many=True,)
+    is_subscription = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscription',
+            'recipes',
+            'recipes_count',
+        )
+        read_only_fields = (
+            'email', 'id', 'username',
+            'first_name', 'last_name',
+            'is_subscription', 'recipes', 'recipes_count',
+        )
+
+    def get_recipes_count(self, obj: User):
+        return obj.recipes.count()
+
+    def get_is_subscription(self, obj: User):
+        return True  # TODO ??????

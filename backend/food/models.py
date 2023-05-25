@@ -9,35 +9,49 @@ MAX_LENGHT_NAME_FOOD: int = 200  # TODO куда??
 MAX_LENGHT_COLOR_HEX: int = 7
 
 User = get_user_model()
-"""
-TODO db_comment
-"""
 
 
-class Tag(models.Model):  # TODO Tags..
-    """ Модель тэгов """
+class Tag(models.Model):
+    """
+    Модель тегов
+    ...
+    Attributes
+    ----------
+    name  :  str
+        Название тега.(Завтрак)
+    color  :  str
+        Цвет в формате HEX.(#F3F366)
+    slug  :  str
+        Слаг для Тега. (breakfast)
+    """
     name = models.CharField(
+        'Название',
         max_length=MAX_LENGHT_NAME_FOOD,
-        verbose_name='Название',
         unique=True,
-        db_comment='Видимое название тега',
-        help_text='Видимое название тега'
+        db_comment='Отображаемое название тега',
+        help_text='Придумайте название тега',
     )
     color = models.CharField(
+        'Цвет',
         max_length=MAX_LENGHT_COLOR_HEX,
-        verbose_name='Цвет',
         unique=True,
+        db_comment='Цвет в HEX-формате',
+        help_text='Используйте цвет в формате HEX',
         validators=[RegexValidator(regex=r'#[A-F0-9]{6}$')]
     )
     slug = models.SlugField(
+        'Слаг',
         max_length=MAX_LENGHT_NAME_FOOD,
         unique=True,
+        db_comment='Slug для цвета',
+        help_text='Используйте slug состаящий из '
+                  'латинских букв, цифр и символа _',
         validators=[RegexValidator(regex=r'^[-a-zA-Z0-9_]+$')]
     )
 
     class Meta:
-        verbose_name = 'Тэг'
-        verbose_name_plural = 'Тэги'
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
         ordering = ('name',)
         constraints = (
             models.UniqueConstraint(
@@ -51,14 +65,27 @@ class Tag(models.Model):  # TODO Tags..
 
 
 class Ingredient(models.Model):
-    """ Модель ингредиентов """
+    """
+    Модель ингредиентов
+    ...
+    Attributes
+    ----------
+    name  :  str
+        Название ингредиента.(Морковь)
+    measurement_unit  :  str
+        Единицы измерения (г.)
+    """
     name = models.CharField(
+        'Наименование',
         max_length=MAX_LENGHT_NAME_FOOD,
-        verbose_name='Наименование',
+        db_comment='Название ингредиента',
+        help_text='Придумайте название ингредиента',
     )
     measurement_unit = models.CharField(
+        'Ед. измерения',
         max_length=20,
-        verbose_name='Ед. измерения',
+        db_comment='Ед.измерения ингредиента',
+        help_text='Обозначте ед. измерения ингредиента',
     )
 
     class Meta:
