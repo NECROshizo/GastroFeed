@@ -1,8 +1,18 @@
-import django_filters
+from django_filters import FilterSet, filters
+from food.models import Recipe, Tag
 
-class ProductFilter(django_filters.FilterSet):
-    name = django_filters.CharFilter(lookup_expr='iexact')
+
+class RecipeFilter(FilterSet):
+    tags = filters.ModelMultipleChoiceFilter(
+        field_name='tags__slug',
+        to_field_name='slug',
+        # lookup_type='in',
+        queryset=Tag.objects.all(),
+    )
 
     class Meta:
-        model = Product
-        fields = ['price', 'release_date']
+        model = Recipe
+        fields = (
+            'tags',
+            'author',
+        )

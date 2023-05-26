@@ -125,7 +125,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             ingredient_obj = Ingredient.objects.get(id=id)
             if not ingredient_obj:
                 ingredient.append(id)
-            elif amount < 1:
+            elif int(amount) < 1:
                 amount_incorrect.append(id)
             ingredient_amount.append((ingredient_obj, amount,))
 
