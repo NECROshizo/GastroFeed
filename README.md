@@ -2,5 +2,4 @@
 /actions/workflows/foodgram_workflow.yml/badge.svg)
 
 
-TODO:
-1. food/models User = get_user_model() # TODO заменить на общее
+В процессе, после написание docker compose
