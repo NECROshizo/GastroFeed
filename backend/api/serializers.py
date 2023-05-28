@@ -3,13 +3,9 @@ from django.db.models import F
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
-from .utils import add_ingredients_in_recipe, check_object
-from food.models import (
-    Ingredient,
-    IngredientsRecipes,
-    Recipe,
-    Tag,
-)
+from .utils import (add_ingredients_in_recipe, check_object,
+                    get_messege_incorect_obj)
+from food.models import Ingredient, IngredientsRecipes, Recipe, Tag
 
 User = get_user_model()
 
@@ -111,34 +107,41 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         if not tags:
             raise serializers.ValidationError('Теги необходиый атрибут')
-        # tags_exists = Tag.objects.filter(id__in=tags).values('id')
-        # tags_missing = [tag for tag in tags if tag not in tags_exists]
-        # if tags_missing: # TODO str != int
-        #     raise serializers.ValidationError(
-        #         # f'Теги {", ".join(tags_missing)} не существуют')
-        #         'Тег не существуют')
-
+        tags_exists = Tag.objects.filter(id__in=tags).values('id')
+        tags_missing = [
+            str(tag)
+            for tag in tags
+            if tag not in map(lambda x: x.get('id'), tags_exists)
+        ]
+        if tags_missing:
+            raise serializers.ValidationError(
+                get_messege_incorect_obj(("Теги:", "Tег"), tags_missing))
         if not ingredients:
             raise serializers.ValidationError(
-                'Ингредиенти необходиый атрибут')
+                'Ингредиент необходиый атрибут')
         ingredient_amount = list()
         ingredient_missing, amount_incorrect = list(), list()
         for ingredient in ingredients:
             id, amount = ingredient.values()
             ingredient_obj = Ingredient.objects.get(id=id)
             if not ingredient_obj:
-                ingredient.append(id)
+                ingredient.append(str(id))
             elif int(amount) < 1:
-                amount_incorrect.append(id)
+                amount_incorrect.append(str(id))
             ingredient_amount.append((ingredient_obj, amount,))
 
         if ingredient_missing:
             raise serializers.ValidationError(
-                f'Ингредиентs {", ".join(ingredient_missing)} не существуют')
+                get_messege_incorect_obj(
+                    ("Ингредиенты:", "Ингредиент"), ingredient_missing)
+            )
         if amount_incorrect:
             raise serializers.ValidationError(
-                f'У ингредиентов {", ".join(amount_incorrect)}'
-                f'некоректныое количество'
+                get_messege_incorect_obj(
+                    ("У ингредиентов:", "у ингредиента"),
+                    amount_incorrect,
+                    ("некоректное количество", "некоректное количество")
+                )
             )
         data.update({
             'tags': tags,
@@ -226,5 +229,5 @@ class UserSubscriptionsSerializer(UserSerializer):
         return obj.recipes.count()
 
     def get_is_subscribed(self, obj: User):
-        """Проверить подписан ли пользователь, хоть и всегда да"""
+        """Проверить подписан ли пользователь, всегда да так в подписках"""
         return True

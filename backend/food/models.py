@@ -1,13 +1,7 @@
-# import user.models as user
-
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db import models
 from django.core.validators import MinValueValidator, RegexValidator
-
-
-MAX_LENGHT_NAME_FOOD: int = 200  # TODO куда??
-MAX_LENGHT_COLOR_HEX: int = 7
-
+from django.db import models
 User = get_user_model()
 
 
@@ -26,14 +20,14 @@ class Tag(models.Model):
     """
     name = models.CharField(
         'Название',
-        max_length=MAX_LENGHT_NAME_FOOD,
+        max_length=settings.MAX_LENGHT_NAME_FOOD,
         unique=True,
         db_comment='Отображаемое название тега',
         help_text='Придумайте название тега',
     )
     color = models.CharField(
         'Цвет',
-        max_length=MAX_LENGHT_COLOR_HEX,
+        max_length=settings.MAX_LENGHT_COLOR_HEX,
         unique=True,
         db_comment='Цвет в HEX-формате',
         help_text='Используйте цвет в формате HEX',
@@ -41,7 +35,7 @@ class Tag(models.Model):
     )
     slug = models.SlugField(
         'Слаг',
-        max_length=MAX_LENGHT_NAME_FOOD,
+        max_length=settings.MAX_LENGHT_NAME_FOOD,
         unique=True,
         db_comment='Slug для цвета',
         help_text='Используйте slug состаящий из '
@@ -77,7 +71,7 @@ class Ingredient(models.Model):
     """
     name = models.CharField(
         'Наименование',
-        max_length=MAX_LENGHT_NAME_FOOD,
+        max_length=settings.MAX_LENGHT_NAME_FOOD,
         db_comment='Название ингредиента',
         help_text='Придумайте название ингредиента',
     )
@@ -112,7 +106,7 @@ class Recipe(models.Model):
         verbose_name='Автор',
     )
     name = models.CharField(
-        max_length=MAX_LENGHT_NAME_FOOD,
+        max_length=settings.MAX_LENGHT_NAME_FOOD,
         verbose_name='Название',
     )
     image = models.ImageField(
@@ -161,12 +155,6 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
         ordering = ['-pub_date']
-        # constraints = (
-        #     models.UniqueConstraint(
-        #         fields=('author', 'name'),
-        #         name='unique_recipe'
-        #     ),
-        # )
 
     def __str__(self) -> str:
         return self.name

@@ -27,11 +27,11 @@ class CookUser(AbstractUser):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
-    # def __str__(self):
-    #     return f'{self.get_full_name} aka {self.username}'
+    def __str__(self):
+        return self.username
 
 
-class Subscriptions(models.Model):  # TODO Разобраться с именами........
+class Subscriptions(models.Model):
     user = models.ForeignKey(
         CookUser,
         on_delete=models.CASCADE,

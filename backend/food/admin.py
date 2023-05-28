@@ -1,14 +1,8 @@
+from django.conf import settings
 from django.contrib import admin
 from django.utils.html import format_html, format_html_join
-from .models import (
-    Ingredient,
-    IngredientsRecipes,
-    Recipe,
-    Tag
-)
 
-
-EMPTY_VALUE_DISPLAY: str = '-пусто-'
+from .models import Ingredient, IngredientsRecipes, Recipe, Tag
 
 
 class IngredientsInline(admin.TabularInline):
@@ -23,7 +17,7 @@ class IngredientsAdmin(admin.ModelAdmin):
     list_display = ('name', 'measurement_unit')
     search_fields = ('name', )
     list_filter = ('name', )
-    empty_value_display = EMPTY_VALUE_DISPLAY
+    empty_value_display = settings.EMPTY_VALUE_DISPLAY
 
 
 @admin.register(Tag)
@@ -31,8 +25,7 @@ class TagsAdmin(admin.ModelAdmin):
     """ Отображение в Админпанели Тегов"""
     list_display = ('name', 'show_color', 'slug')
     search_fields = ('name', 'slug')
-    list_filter = ('name', )
-    empty_value_display = EMPTY_VALUE_DISPLAY
+    empty_value_display = settings.EMPTY_VALUE_DISPLAY
 
     @admin.display(description='Цвет')
     def show_color(self, obj: Tag) -> str:
@@ -49,12 +42,12 @@ class RecipesAdmin(admin.ModelAdmin):
     list_display = (
         'name', 'show_preview', 'show_tags', 'text',
         'show_ingredients', 'cooking_time',
-        'author', 'pub_date',
+        'author', 'show_favorit', 'pub_date',
     )
     search_fields = ('name', 'text', 'author__username', 'tags__name')
     list_filter = ('author', 'cooking_time', 'pub_date',)
     inlines = (IngredientsInline,)
-    empty_value_display = EMPTY_VALUE_DISPLAY
+    empty_value_display = settings.EMPTY_VALUE_DISPLAY
 
     @admin.display(description='Превью блюда')
     def show_preview(self, obj: Recipe) -> str:
@@ -73,7 +66,6 @@ class RecipesAdmin(admin.ModelAdmin):
         return tags_column
 
     @admin.display(description='Ингредиенты',)
-    # TODO слишком много обращений к БД
     def show_ingredients(self, obj: Recipe) -> str:
         ingredients_query_set: list[IngredientsRecipes] = sorted(
             obj.ingredient_in_recipe.all(),
@@ -88,3 +80,7 @@ class RecipesAdmin(admin.ModelAdmin):
             for ingredient_in_recipe in ingredients_query_set
         ]
         return ingredients_column
+
+    @admin.display(description='В избранном',)
+    def show_favorit(self, obj: Recipe) -> str:
+        return obj.favorit_recipe.count()

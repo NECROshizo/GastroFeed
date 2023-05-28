@@ -1,12 +1,10 @@
-from datetime import date
-
 from django.contrib.auth import get_user_model
 from django.core.handlers.wsgi import WSGIRequest
-from django.db.models import Sum
+from django.db.models import QuerySet, Sum
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserViewSet
-from rest_framework import filters, permissions, status, viewsets
+from rest_framework import filters, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
@@ -17,9 +15,9 @@ from .permission import RecipiesPermisionUserAutherAdmin
 from .serializers import (IngredientSerializer, RecipeBriefSerializer,
                           RecipeSerializer, TagSerializer, UserSerializer,
                           UserSubscriptionsSerializer)
-from food.models import (Favorit, Ingredient, IngredientsRecipes, Recipe,
-                         ShoppingCart, Tag)
-from user.models import Subscriptions
+from .utils import (
+    add_obj_in_table, delete_obj_in_table, make_content_file, sent_file)
+from food.models import Ingredient, IngredientsRecipes, Recipe, Tag
 
 User = get_user_model()
 
@@ -35,7 +33,7 @@ class UserViewSet(DjoserViewSet, viewsets.ModelViewSet):
         permission_classes=(permissions.IsAuthenticated,),
         serializer_class=UserSubscriptionsSerializer,
     )
-    def subscriptions(self, request: WSGIRequest):
+    def subscriptions(self, request: WSGIRequest) -> Response:
         pages = self.paginate_queryset(
             User.objects.filter(subscriber__user=request.user)
         )
@@ -48,24 +46,16 @@ class UserViewSet(DjoserViewSet, viewsets.ModelViewSet):
         serializer_class=UserSubscriptionsSerializer,
         permission_classes=(permissions.IsAuthenticated,),
     )
-    def subscribe(self, request: WSGIRequest, id):
+    def subscribe(self, request: WSGIRequest, id: str) -> Response:
         user = get_object_or_404(User, id=id)
-        if user.subscriber.filter(user=request.user).exists():
-            return Response(
-                {'errors': 'Уже потписан'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        Subscriptions.objects.create(user=request.user, subscriber=user)
-        serializer = self.get_serializer(user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return add_obj_in_table(
+            self.get_serializer, request.user, user, user.subscriber)
 
     @subscribe.mapping.delete
-    def subscriber_delete(self, request: WSGIRequest, id):
+    def subscriber_delete(self, request: WSGIRequest, id: str) -> Response:
         user = get_object_or_404(User, id=id)
-        subscriptions = get_object_or_404(
-            Subscriptions, user=request.user, subscriber=user)
-        subscriptions.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return delete_obj_in_table(
+            request.user, user.subscriber)
 
 
 class TagsViewSet(viewsets.ModelViewSet):
@@ -93,7 +83,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Recipe]:
         """Получить queryset в зависимости от переданных параметров"""
         user = self.request.user
         if user.is_anonymous:
@@ -104,70 +94,25 @@ class RecipesViewSet(viewsets.ModelViewSet):
             return Recipe.objects.filter(shoping_card_recipe__user=user)
         return super().get_queryset()
 
-    #=====================================================================
-    from rest_framework import serializers
-    from django.db import models
-    @staticmethod
-    def add_recipe_in_model(
-            serialize: serializers.ModelSerializer,
-            pk: int,
-            user: models.Model,
-            model: models.Model,
-            recipe_model: models.Model,
-            error_message: str = 'Уже сделано',
-    ):
-        recipe = get_object_or_404(recipe_model, id=pk)
-        if recipe.shoping_card_recipe.filter(user=user).exists():
-            return Response(
-                {'errors': error_message},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        model.objects.create(user=user, recipe=recipe)
-        return Response(serialize(recipe).data, status=status.HTTP_201_CREATED)
-
-    @staticmethod
-    def delete_recipe_in_model(
-            pk: int,
-            user: models.Model,
-            model: models.Model,
-            recipe_model: models.Model,
-    ):
-        recipe = get_object_or_404(recipe_model, id=pk)
-        model_for_recipie = get_object_or_404(
-            model, user=user, recipe=recipe)
-        model_for_recipie.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-#+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-
-
     @action(
         detail=True,
         methods=['post'],
         serializer_class=RecipeBriefSerializer,
         permission_classes=(permissions.IsAuthenticated,),
     )
-    def favorite(self, request: WSGIRequest, pk):
-        return self.add_recipe_in_model(
-            self.get_serializer, pk, request.user, Favorit, Recipe,)
-        # recipe = get_object_or_404(Recipe, id=pk)
-        # if recipe.favorit_recipe.filter(user=request.user).exists():
-        #     return Response(
-        #         {'errors': 'Уже в избранном'},
-        #         status=status.HTTP_400_BAD_REQUEST
-        #     )
-        # Favorit.objects.create(user=request.user, recipe=recipe)
-        # serializer = self.get_serializer(recipe)
-        # return Response(serializer.data, status=status.HTTP_201_CREATED)
+    def favorite(self, request: WSGIRequest, pk: str) -> Response:
+        """Добавить рецепт в избранное"""
+        recipe = get_object_or_404(Recipe, id=pk)
+        return add_obj_in_table(
+            self.get_serializer, request.user, recipe,
+            recipe.favorit_recipe)
 
     @favorite.mapping.delete
-    def favotite_delete(self, request: WSGIRequest, pk):
+    def favotite_delete(self, request: WSGIRequest, pk: str) -> Response:
+        """Удалить рецепт из избранного"""
         recipe = get_object_or_404(Recipe, id=pk)
-        favorit = get_object_or_404(
-            Favorit, user=request.user, recipe=recipe)
-        favorit.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return delete_obj_in_table(
+            request.user, recipe.favorit_recipe)
 
     @action(
         detail=True,
@@ -175,31 +120,28 @@ class RecipesViewSet(viewsets.ModelViewSet):
         serializer_class=RecipeBriefSerializer,
         permission_classes=(permissions.IsAuthenticated,),
     )
-    def shopping_cart(self, request: WSGIRequest, pk):
+    def shopping_cart(self, request: WSGIRequest, pk: str) -> Response:
+        """Добавить рецепт в корзину"""
         recipe = get_object_or_404(Recipe, id=pk)
-        if recipe.shoping_card_recipe.filter(user=request.user).exists():
-            return Response(
-                {'errors': 'Уже в корзине'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        ShoppingCart.objects.create(user=request.user, recipe=recipe)
-        serializer = self.get_serializer(recipe)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return add_obj_in_table(
+            self.get_serializer, request.user, recipe,
+            recipe.shoping_card_recipe)
 
     @shopping_cart.mapping.delete
-    def shopping_cart_delete(self, request: WSGIRequest, pk):
+    def shopping_cart_delete(self, request: WSGIRequest, pk: str) -> Response:
+        """Удалить рецепт из корзины"""
         recipe = get_object_or_404(Recipe, id=pk)
-        favorit = get_object_or_404(
-            ShoppingCart, user=request.user, recipe=recipe)
-        favorit.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return delete_obj_in_table(
+            request.user, recipe.shoping_card_recipe)
 
     @action(
         detail=False,
         permission_classes=(permissions.IsAuthenticated,),
     )
-    def download_shopping_cart(self, request: WSGIRequest):
+    def download_shopping_cart(self, request: WSGIRequest) -> HttpResponse:
+        """Отправить сформированный список ингредиентов из рецептов"""
         user = request.user
+        file_name = f'{user.username}-byu-list.txt'
         all_ingredient = IngredientsRecipes.objects.filter(
             recipe__shoping_card_recipe__user=user
         ).order_by(
@@ -209,14 +151,5 @@ class RecipesViewSet(viewsets.ModelViewSet):
         ).annotate(
             amount=Sum('amount')
         )
-
-        file_name = f'{user.username}-byu-list.txt'
-        content_file = [f'Список покупок от {date.today()}:\n']
-        for num, ingredient in enumerate(all_ingredient, start=1):
-            name, m_unit, amount = ingredient.values()
-            content_file.append(f'{num}. {name} - {amount} {m_unit}\n')
-        response = HttpResponse(
-            content_file, content_type='text.txt; charset=utf-8'
-        )
-        response['Content-Disposition'] = f'attachment; filename={file_name}'
-        return response
+        content_file = make_content_file(all_ingredient)
+        return sent_file(content_file, file_name)
