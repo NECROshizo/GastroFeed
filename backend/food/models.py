@@ -31,7 +31,10 @@ class Tag(models.Model):
         unique=True,
         db_comment='Цвет в HEX-формате',
         help_text='Используйте цвет в формате HEX',
-        validators=[RegexValidator(regex=r'#[A-F0-9]{6}$')]
+        validators=[RegexValidator(
+            regex=settings.PATTERN_COLORS_TAG,
+            message=settings.MESSAGE_COLORS_TAG,
+        )]
     )
     slug = models.SlugField(
         'Слаг',
@@ -40,7 +43,10 @@ class Tag(models.Model):
         db_comment='Slug для цвета',
         help_text='Используйте slug состаящий из '
                   'латинских букв, цифр и символа _',
-        validators=[RegexValidator(regex=r'^[-a-zA-Z0-9_]+$')]
+        validators=[RegexValidator(
+            regex=settings.PATTERN_SLUG_TAG,
+            message=settings.MESSAGE_SLUG_TAG,
+        )]
     )
 
     class Meta:
@@ -98,38 +104,89 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
-    """ Модель рецептов """
+    """
+    Модель рецептов
+    ...
+    Attributes
+    ----------
+    author  :  int
+        Автор рецепта,
+        по fk с моделью CookUser(AbstractUser)
+        Поля:   userman, email, first_name, last_name
+                subscriptions
+    name : str
+        Название рецепта
+    image  : str
+        Изображение рецепта
+    text : str
+        Описание рецепта
+    tags : int
+        Теги рецепта,
+        по m2m с моделью Tag
+        Поля:   name, color, slug,
+    ingredients : int
+        Используемые ингредиенты,
+        по m2m с моделью Ingredient
+        Поля Ingredient:                name, measurement_unit
+        Доп. поля IngredientsRecipes:   amount
+    favorited : int
+        Те кто добавили рецепт в избранное,
+        по fk с моделью CookUser(AbstractUser)
+        Поля:   userman, email, first_name, last_name
+                subscriptions
+    shopping_cart : int
+        Те кто добавили рецепт в корзину,
+        по fk с моделью CookUser(AbstractUser)
+        Поля:   userman, email, first_name, last_name
+                subscriptions
+    cooking_time : int
+        Время приготовления
+    """
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='recipes',
         verbose_name='Автор',
+        db_comment='Автор рецепта',
+        help_text='Выберете автора',
     )
     name = models.CharField(
         max_length=settings.MAX_LENGHT_NAME_FOOD,
         verbose_name='Название',
     )
     image = models.ImageField(
-        verbose_name='Готовый результат',
+        'Готовый результат',
         upload_to='food_images/',
+        db_comment='Изображение рецепта',
+        help_text='Выберете илюстрацию рецепта',
     )
-    text = models.TextField('Описание рецепта')
+    text = models.TextField(
+        'Описание рецепта',
+        db_comment='Инструкция приготовления',
+        help_text='Опишите приготовление рецепта',
+    )
     tags = models.ManyToManyField(
         Tag,
         related_name='recipes',
         verbose_name='Тег',
+        db_comment='Теги рецепта',
+        help_text='Обозначьте теги рецепта',
     )
     ingredients = models.ManyToManyField(
         Ingredient,
         through='IngredientsRecipes',
         related_name='recipes',
         verbose_name='Ингредиенты',
+        db_comment='Ингредиенты',
+        help_text='Выберете ингредиенты',
     )
     favorited = models.ManyToManyField(
         User,
-        through='Favorit',
+        through='Favorite',
         related_name='recipes_favorit',
         verbose_name='В избраном',
+        db_comment='Добавившие в избранное',
+        help_text='Добавте в избранное',
         blank=True,
     )
     shopping_cart = models.ManyToManyField(
@@ -137,17 +194,22 @@ class Recipe(models.Model):
         through='ShoppingCart',
         related_name='recipes_shopping_cart',
         verbose_name='В корзине',
+        db_comment='Добавившие в корзину',
+        help_text='Добавте в корзину',
         blank=True,
     )
     cooking_time = models.PositiveIntegerField(
-        verbose_name='Время приготовления',
+        'Время приготовления',
+        db_comment='Время приготовления',
+        help_text='Обозначьте время приготовления',
         validators=[MinValueValidator(
             limit_value=1,
             message='Минимальное время приготовления 1 минута'
         )]
     )
     pub_date = models.DateField(
-        verbose_name='Дата создания',
+        'Дата создания',
+        db_comment='Дата добавления рецепта(авто)',
         auto_now_add=True,
     )
 
@@ -161,7 +223,23 @@ class Recipe(models.Model):
 
 
 class IngredientsRecipes(models.Model):
-    """ Связующая модель моделей Recipe и Ingredient"""
+    """
+    Связующая модель моделей Recipe и Ingredient
+    ...
+    Attributes
+    ----------
+    ingredients : int
+        Используемые ингредиенты,
+        по fk с моделью Ingredient
+        Поля:    name, measurement_unit
+    recipe : int
+        Рецепты где есть ингредиент,
+        по fk с моделью Recipe
+        Поля:   author, name, image, text, tags, ingredients,
+                favorited, shopping_cart, cooking_time
+    amount : int
+        Количество ингредиентов в рецепте
+    """
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
@@ -181,20 +259,37 @@ class IngredientsRecipes(models.Model):
     class Meta:
         verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецепте'
+        ordering = ['recipe']
         constraints = (
             models.UniqueConstraint(
                 fields=('ingredient', 'recipe'),
-                name='Один вид ингредиента в рецепте',
+                name='unique_ingredients_recipes',
             ),
         )
 
 
-class Favorit(models.Model):
+class Favorite(models.Model):
+    """
+    Модель избранного
+    ...
+    Attributes
+    ----------
+    user  :  int
+        Добавивший в избранное,
+        по fk с моделью CookUser(AbstractUser)
+        Поля:   userman, email, first_name, last_name
+                subscriptions
+    recipe : int
+        Рецепт в избранном,
+        по fk с моделью Recipe
+        Поля:   author, name, image, text, tags, ingredients,
+                favorited, shopping_cart, cooking_time
+    """
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='favorit_user_recipe',
-        verbose_name='Ингредиент',
+        verbose_name='Пользователь',
     )
     recipe = models.ForeignKey(
         Recipe,
@@ -206,6 +301,7 @@ class Favorit(models.Model):
     class Meta:
         verbose_name = 'Добавил в избранное'
         verbose_name_plural = 'Добавили в избранное'
+        ordering = ['user']
         constraints = (
             models.UniqueConstraint(
                 fields=('user', 'recipe'),
@@ -215,11 +311,27 @@ class Favorit(models.Model):
 
 
 class ShoppingCart(models.Model):
+    """
+    Модель корзины
+        ...
+    Attributes
+    ----------
+    user  :  int
+        Добавивший в корзину,
+        по fk с моделью CookUser(AbstractUser)
+        Поля:   userman, email, first_name, last_name
+                subscriptions
+    recipe : int
+        Рецепт в корзине,
+        по fk с моделью Recipe
+        Поля:   author, name, image, text, tags, ingredients,
+                favorited, shopping_cart, cooking_time
+    """
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='shoping_card_recipe',
-        verbose_name='Ингредиент',
+        verbose_name='Пользователь',
     )
     recipe = models.ForeignKey(
         Recipe,
@@ -231,6 +343,7 @@ class ShoppingCart(models.Model):
     class Meta:
         verbose_name = 'Добавил в корзину'
         verbose_name_plural = 'Добавили в корзину'
+        ordering = ['user']
         constraints = (
             models.UniqueConstraint(
                 fields=('user', 'recipe'),

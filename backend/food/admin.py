@@ -13,7 +13,7 @@ class IngredientsInline(admin.TabularInline):
 
 @admin.register(Ingredient)
 class IngredientsAdmin(admin.ModelAdmin):
-    """ Отображение в Админпанели Ингридиентов"""
+    """ Отображение в Админпанели Ингредиентов"""
     list_display = ('name', 'measurement_unit')
     search_fields = ('name', )
     list_filter = ('name', )
