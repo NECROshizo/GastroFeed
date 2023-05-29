@@ -47,7 +47,7 @@ class Subscriptions(models.Model):
 
     class Meta:
         verbose_name = 'Подписка'
-        verbose_name_plural = 'Подписка'
+        verbose_name_plural = 'Подписок'
         constraints = (
             models.UniqueConstraint(
                 fields=('user', 'subscriber'),
@@ -55,5 +55,5 @@ class Subscriptions(models.Model):
             ),
             models.CheckConstraint(
                 check=~models.Q(user=models.F('subscriber')),
-                name='На себя нельзя',)
+                name='not_self',)
         )
