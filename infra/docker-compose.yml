@@ -16,8 +16,8 @@ services:
     #   dockerfile: Dockerfile
     restart: always
     volumes:
-      - static_dir:/app/static/
-      - media_dir:/app/media/
+      - static_value:/app/static/
+      - media_value:/app/media/
     env_file:
       - ./.env
 
