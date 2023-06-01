@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
-from .filters import RecipeFilter
+from .filters import IngredientFilter, RecipeFilter
 from .paginations import FoodgrammPagination
 from .permission import RecipiesPermisionUserAutherAdmin
 from .serializers import (IngredientSerializer, RecipeBriefSerializer,
@@ -70,8 +70,8 @@ class IngredientsViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('^name', )
+    filter_backends = (IngredientFilter, )
+    search_fields = ('@name', )
     pagination_class = None
 
 
