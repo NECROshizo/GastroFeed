@@ -8,3 +8,5 @@ drf_extra_fields==3.4.1
 gunicorn==20.1.0
 psycopg2-binary==2.8.6
 asgiref==3.6.0
+pytz==2020.1
+sqlparse==0.3.1 
