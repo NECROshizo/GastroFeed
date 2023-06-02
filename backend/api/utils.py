@@ -78,7 +78,8 @@ def check_ingredients(ingredients: list[dict], model: Model) -> list[tuple]:
         if not ingredient_obj:
             ingredient.append(str(id))
         elif int(amount) < 1:
-            amount_incorrect.append(str(id))
+            ingredient_name = model.objects.get(id=id)
+            amount_incorrect.append(f'"{ingredient_name.name}"')
         ingredient_amount.append((ingredient_obj, amount,))
 
     if ingredient_missing:

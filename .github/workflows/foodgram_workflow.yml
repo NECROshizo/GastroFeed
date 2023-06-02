@@ -64,7 +64,8 @@ jobs:
           passphrase: ${{ secrets.PASSPHRASE }}
           script: |
             sudo docker-compose stop
-            sudo docker-compose rm backend
+            sudo docker-compose rm ${{ secrets.DOCKER_USERNAME }}/backend
+            sudo docker-compose rm ${{ secrets.DOCKER_USERNAME }}/frontend
             rm -f .env
             touch .env
             echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env
@@ -79,7 +80,6 @@ jobs:
             sudo docker-compose exec -T backend python manage.py makemigrations
             sudo docker-compose exec -T backend python manage.py migrate
             sudo docker-compose exec -T backend python manage.py collectstatic --no-input
-            sudo docker-compose exec -T backend python manage.py loaddata data.json
 
   send_message:
     runs-on: ubuntu-latest
