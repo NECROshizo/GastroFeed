@@ -4,7 +4,7 @@ from django.db.models import QuerySet, Sum
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserViewSet
-from rest_framework import filters, permissions, viewsets
+from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
@@ -70,13 +70,13 @@ class IngredientsViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    filter_backends = (IngredientFilter, )
-    search_fields = ('^name', )
+    filter_backends = (IngredientFilter,)
+    search_fields = ('^name',)
     pagination_class = None
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.all()
+    queryset = Recipe.objects.select_related('author').all()
     serializer_class = RecipeSerializer
     pagination_class = FoodgrammPagination
     permission_classes = (RecipiesPermisionUserAutherAdmin,)
@@ -86,12 +86,13 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def get_queryset(self) -> QuerySet[Recipe]:
         """Получить queryset в зависимости от переданных параметров"""
         user = self.request.user
+        queryset_optimal = Recipe.objects.select_related('author')
         if user.is_anonymous:
             return super().get_queryset()
         if self.request.query_params.get('is_favorited'):
-            return Recipe.objects.filter(favorit_recipe__user=user)
+            return queryset_optimal.filter(favorit_recipe__user=user)
         if self.request.query_params.get('is_in_shopping_cart'):
-            return Recipe.objects.filter(shoping_card_recipe__user=user)
+            return queryset_optimal.filter(shoping_card_recipe__user=user)
         return super().get_queryset()
 
     @action(

@@ -40,7 +40,7 @@ docker-compose exec backend python manage.py collectstatic --no-input
 ```
 #### Импорт данных в базу данных::
 ```
-docker-compose exec backend python manage.py loaddata data.json
+docker-compose exec backend python manage.py loaddata data/data.json
 ```
 #### Проект для демонстрации
 Проект можно посмотреть по адрессу [fodgram](http://84.201.176.35)
