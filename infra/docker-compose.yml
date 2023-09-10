@@ -4,16 +4,11 @@ services:
     image: postgres:13.0-alpine
     volumes:
       - db_value:/var/lib/postgresql/data/
-    # ports:
-    #   - "5438:5432"
     env_file:
       - ./.env
 
   backend:
     image: necroshizo/backend:latest
-    # build: 
-    #   context: ../backend
-    #   dockerfile: Dockerfile
     restart: always
     volumes:
       - static_value:/app/static/
@@ -25,9 +20,6 @@ services:
 
   frontend:
     image: necroshizo/frontend:latest
-    # build:
-    #   context: ../frontend
-    #   dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build/
 
